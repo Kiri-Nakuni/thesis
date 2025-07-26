@@ -12,26 +12,28 @@
 \usepackage[figure,table]{totalcount}
 \usepackage{listings}
 \usepackage{AppendixAfter}
-\lstset{
-  breaklines=true,
-  keywordstyle = {\small\bfseries\color[rgb]{0,0,1}},
-  stringstyle = {\color[rgb]{1,0,0}},
-  commentstyle = {\smallitshape \color[rgb]{0,1,0}},
-  basicstyle={\ttfamily},
-  identifierstyle={\small},
-  ndkeywordstyle={\small},
-  stringstyle={\small\ttfamily},
-  numberstyle={\scriptsize},
-  numbers=left,
-  frame=lines
+\lstset{%
+  breaklines=true,%
+  keywordstyle = {\small\bfseries\color[rgb]{0,0,1}},%
+  stringstyle = {\color[rgb]{1,0,0}},%
+  commentstyle = {\smallitshape \color[rgb]{0,1,0}},%
+  basicstyle={\ttfamily},%
+  identifierstyle={\small},%
+  ndkeywordstyle={\small},%
+  stringstyle={\small\ttfamily},%
+  numberstyle={\scriptsize},%
+  numbers=left,%
+  frame=lines%
 }
 \usephysicsmodule{ab}
 \usepackage{hyperref}
 \hypersetup{unicode,bookmarksnumbered=true,hidelinks,final}
 \usepackage[sorting=none]{biblatex}
 \usepackage{afterpage}
-\newcommand{\clearfig}{
+\newcommand{\clearfig}{%
   \afterpage{\clearpage}
 }
 \newcommand{\mqty}[1]{\begin{matrix}#1\end{matrix}}
-\renewcommand{\BibsAfter}{\printbibliography[title=参考文献]}
+\renewcommand{\BibsAfter}{%
+  \printbibliography[title=参考文献]
+}%

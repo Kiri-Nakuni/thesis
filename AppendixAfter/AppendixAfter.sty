@@ -14,6 +14,14 @@
 \AtBeginDocument{%
     \immediate\openout\AppendixAfter@appendixfile=\jobname.afn%
     \immediate\openout\AppendixAfter@finalsectionlist=\jobname.fsl%
+    \@ifclassloaded{jlreq}{%
+        \PackageWarningNoLine{AppendixAfter}{%
+            jlreq document class detected.\MessageBreak
+            Note: AtEndDocument processing may require manual \string\FinalProcess\space call.\MessageBreak
+            If appendices or final sections are not appearing,\MessageBreak
+            please add \string\FinalProcess\space before \string\end{document}%
+        }%
+    }{}%
 }
 \AtEndDocument{%
     \closeout\AppendixAfter@appendixfile%
@@ -53,9 +61,6 @@
     \BibsAfter
     \InputAllFinalSections
 }
-\AtEndDocument{%
-    \FinalProcess
-}
 \NewEnviron{finalsection}{%
     \stepcounter{AppendixAfter@finalsection}%
     \immediate\openout\AppendixAfter@finalsectionfile=\jobname\theAppendixAfter@finalsection.fsc%
@@ -64,4 +69,7 @@
     \protected@write\AppendixAfter@finalsectionlist{}{%
         \string\InputIfFileExists{\jobname\theAppendixAfter@finalsection.fsc}{}{}%
     }%
+}
+\AtEndDocument{%
+    \FinalProcess
 }
