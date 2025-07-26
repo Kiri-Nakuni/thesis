@@ -34,7 +34,10 @@
     "*.snm",
     "*.nav",
     "*.dvi",
-    "*.synctex.gz"
+    "*.synctex.gz",
+    "*.afn",
+    "*.fsl",
+    "*.fsc"
   ],
 
   "latex-workshop.latex.outDir": "out",
@@ -48,7 +51,7 @@
     {
       "name": "lualatex",
       "command": "latexmk",
-      "args": ["-lualatex", "--output-directory=%OUTDIR%", "%DOC%"],
+      "args": ["-lualatex", "--output-directory=%OUTDIR%","-e", "\"add_file_ext('afn');add_file_ext('fsl');add_file_ext('fsc');\"",  "%DOC%"],
       "env": {}
     }
   ],

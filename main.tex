@@ -1,6 +1,6 @@
 \documentclass[a4paper,12pt]{ltjsreport}
 \input{./pre.tex}
-\renewcommand{\subfilecmd}[1]{}
+\maintex
 \addbibresource{sections/01_intro/reference.bib}
 \begin{document}
 \input{title.tex}
@@ -24,15 +24,9 @@
 \clearfig
 \input{sections/01_intro/main.tex}
 
-% appendix
-
-
-\input{appendix.tex}
-
-\printbibliography[title=参考文献]
-
 % 謝辞
-
-\input{acknowledgement.tex}
+\begin{finalsection}
+  \input{acknowledgement.tex}
+\end{finalsection}
 
 \end{document}

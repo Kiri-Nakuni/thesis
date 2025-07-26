@@ -11,6 +11,7 @@
 \usepackage{multirow}
 \usepackage[figure,table]{totalcount}
 \usepackage{listings}
+\usepackage{AppendixAfter}
 \lstset{
   breaklines=true,
   keywordstyle = {\small\bfseries\color[rgb]{0,0,1}},
@@ -33,8 +34,4 @@
   \afterpage{\clearpage}
 }
 \newcommand{\mqty}[1]{\begin{matrix}#1\end{matrix}}
-\newcommand{\subfilecmd}[1]{#1}
-\newcommand{\subbib}{
-  \subfilecmd{\printbibliography[title=参考文献]}
-}
-
+\renewcommand{\BibsAfter}{\printbibliography[title=参考文献]}

@@ -1,0 +1,67 @@
+\NeedsTeXFormat{LaTeX2e}
+\ProvidesPackage{AppendixAfter}[2025/07/27 v1.0.0 Nakuni Kiri]
+\DeclareOption*{\PackageWarning{AppendixAfter}{Unknown option '\CurrentOption'}}
+\ProcessOptions\relax
+\RequirePackage{etoolbox}
+\RequirePackage{environ}
+\newif\ifAppendixAfter@main
+\AppendixAfter@mainfalse
+\newcommand{\maintex}{\AppendixAfter@maintrue}
+\newcounter{AppendixAfter@finalsection}
+\newwrite\AppendixAfter@appendixfile
+\newwrite\AppendixAfter@finalsectionfile
+\newwrite\AppendixAfter@finalsectionlist
+\AtBeginDocument{%
+    \immediate\openout\AppendixAfter@appendixfile=\jobname.afn%
+    \immediate\openout\AppendixAfter@finalsectionlist=\jobname.fsl%
+}
+\AtEndDocument{%
+    \closeout\AppendixAfter@appendixfile%
+    \closeout\AppendixAfter@finalsectionlist%
+}
+\newcommand{\inputappendix}[2][\@empty]{%
+    \ifAppendixAfter@main
+        \protected@write\AppendixAfter@appendixfile{}{%
+            \string\input{#2}
+        }%
+    \else
+        \ifx\@empty#1\@empty
+            \protected@write\AppendixAfter@appendixfile{}{%
+                \string\input{#2}
+            }%
+        \else
+            \protected@write\AppendixAfter@appendixfile{}{%
+                \string\input{#1}
+            }%
+        \fi
+    \fi
+}
+\newcommand{\AppendixAfter}{%
+    \clearpage
+    \appendix
+    \InputIfFileExists{\jobname.afn}{}{}%
+}
+\newcommand{\BibsAfter}{%
+}
+\newcommand{\InputAllFinalSections}{%
+    \InputIfFileExists{\jobname.fsl}{}{%
+        \PackageWarning{AppendixAfter}{No final sections list file found}%
+    }%
+}
+\newcommand{\FinalProcess}{%
+    \AppendixAfter
+    \BibsAfter
+    \InputAllFinalSections
+}
+\AtEndDocument{%
+    \FinalProcess
+}
+\NewEnviron{finalsection}{%
+    \stepcounter{AppendixAfter@finalsection}%
+    \immediate\openout\AppendixAfter@finalsectionfile=\jobname\theAppendixAfter@finalsection.fsc%
+    \immediate\write\AppendixAfter@finalsectionfile{\unexpanded\expandafter{\BODY}}%
+    \immediate\closeout\AppendixAfter@finalsectionfile%
+    \protected@write\AppendixAfter@finalsectionlist{}{%
+        \string\InputIfFileExists{\jobname\theAppendixAfter@finalsection.fsc}{}{}%
+    }%
+}
