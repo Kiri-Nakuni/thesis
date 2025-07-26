@@ -26,13 +26,10 @@
   frame=lines%
 }
 \usephysicsmodule{ab}
+\usepackage[sorting=none]{biblatex}
+\usepackage[section]{placeins}
 \usepackage{hyperref}
 \hypersetup{unicode,bookmarksnumbered=true,hidelinks,final}
-\usepackage[sorting=none]{biblatex}
-\usepackage{afterpage}
-\newcommand{\clearfig}{%
-  \afterpage{\clearpage}
-}
 \newcommand{\mqty}[1]{\begin{matrix}#1\end{matrix}}
 \renewcommand{\BibsAfter}{%
   \printbibliography[title=参考文献]
