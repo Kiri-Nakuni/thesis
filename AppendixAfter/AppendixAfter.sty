@@ -66,7 +66,7 @@
     \immediate\openout\AppendixAfter@finalsectionfile=\jobname\theAppendixAfter@finalsection.fsc%
     \immediate\write\AppendixAfter@finalsectionfile{\unexpanded\expandafter{\BODY}}%
     \immediate\closeout\AppendixAfter@finalsectionfile%
-    \protected@write\AppendixAfter@finalsectionlist{}{%
+    \immediate\write\AppendixAfter@finalsectionlist{%
         \string\InputIfFileExists{\jobname\theAppendixAfter@finalsection.fsc}{}{}%
     }%
 }

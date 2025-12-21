@@ -51,7 +51,7 @@
     {
       "name": "lualatex",
       "command": "latexmk",
-      "args": ["-lualatex", "--output-directory=%OUTDIR%","-e", "\"add_file_ext('afn');add_file_ext('fsl');add_file_ext('fsc');\"",  "%DOC%"],
+      "args": ["-lualatex", "--output-directory=%OUTDIR%",  "%DOC%"],
       "env": {}
     }
   ],

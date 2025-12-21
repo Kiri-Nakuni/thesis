@@ -5,7 +5,7 @@ hijiki 氏の構成した論文執筆環境の為に Appendix(と bibliography �
 ## 使い方
 
 まずはこのファイルを texlive が見つけられるところに置いた方が良いです
-(usr/local/texlive/2025/texmf-dist/tex/latex/appendixafter/AppendixAfter.sty なり C:\texlive\2025<以下略>なり)
+(usr/local/texlive/texmf-local/tex/latex/appendixafter/AppendixAfter.sty)
 置いたら必ず mktexlsr するように。
 
 ### inputappendix
@@ -55,10 +55,16 @@ hoge
 ## 新規 IO について
 
 `.afn`(Appendix File Name), `.fsl`(Final Section List), `.fsc`(Final Section Content) ファイルを利用します。
-latexmk を利用している場合、コマンドラインで
+latexmk を使用する場合は
 
-```bash
-<前略> -e"add_file_ext('\*.afn');add_file_ext('\*.fsl');add_file_ext('\*.fsc);" <後略>
+```perl
+push @generated_exts, 'afn', 'fsl', 'fsc';
+add_cus_dep('afn', 'tex', 0, 'dummy_rescan');
+add_cus_dep('fsl', 'tex', 0, 'dummy_rescan');
+add_cus_dep('fsc', 'tex', 0, 'dummy_rescan');
+sub dummy_rescan {
+    return 0;
+}
 ```
 
-するなり latexmkrc で add_file_ext するなりした方が良いと思います。
+と追記した方が良いかと思います。
