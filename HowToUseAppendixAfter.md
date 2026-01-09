@@ -1,70 +1,182 @@
-## これは何？
+# AppendixAfter v2.1.5
 
-hijiki 氏の構成した論文執筆環境の為に Appendix(と bibliography 用の設定を生やしたもの)
+## これはなに？
 
-## 使い方
+AppendixAfter は、docmute パッケージとの併用下で威力を発揮するパッケージです。
+サブファイルでのタイプセットでも、メインファイルのタイプセットでも Appendix を常に末尾に据え付けることが出来ます。
 
-まずはこのファイルを texlive が見つけられるところに置いた方が良いです
-(usr/local/texlive/texmf-local/tex/latex/appendixafter/AppendixAfter.sty)
-置いたら必ず mktexlsr するように。
+## インストール
 
-### inputappendix
+AppendixAfter.sty を TeX が認識できるパスへ配置し、必要に応じて `mktexlsr` を実行してください。
+例: `$TEXMFLOCAL/tex/latex/appendixafter/`
 
-```tex
-\inputappendix[#1]{#2}
-```
+## 基本的な使い方
 
-#1 にはそのファイルからの相対パス、#2 にはメインファイルからの相対パスを入れてください。
-そのファイルを、ドキュメントの末尾で input します
+### パッケージの読み込みとモード指定
 
-### maintex
+タイプセット対象がメインか、サブファイルかを `mode` で指定します。
 
-メインファイルの場合、プリアンブルで`\maintex`してください
-
-### finalsection
+1. メインファイルの場合
 
 ```tex
-\begin{finalsection}
-hoge
-\end{finalsection}
+\usepackage[mode=main]{AppendixAfter}
 ```
 
-謝辞などの、Appendix より後で始めたいものはこの環境で囲った中に書き込んでください。Appendix が存在しない場合は単純に最後に呼び出すことが出来ます。
+2. サブファイルの場合
 
-#### AppendixAfter, BibsAfter, FinalProcess
+```tex
+\usepackage[mode=sub]{AppendixAfter}% サブファイルの場合、mode指定は省略できます
+```
 
-このパッケージは AtEndDocument に`\FinalProcess`をすることで機能を提供しています。
+### オプション一覧
 
-##### FinalProcess
+| オプション      | 値             | 説明                                                                                                         |
+| --------------- | -------------- | ------------------------------------------------------------------------------------------------------------ |
+| `mode`          | `main`         | ルートモード。`\AppendixInput` は第 2 引数（メイン用パス）を採用します。                                     |
+|                 | `sub`          | サブモード（デフォルト）。`\AppendixInput` は第 1 引数（サブ用パス）を採用します。                           |
+|                 | `off`          | 機能を停止。記録も末尾出力も行いません。                                                                     |
+| `file`          | 文字列         | 中間ファイル名（既定: ` \c_sys_jobname_str.apx`）。危険拡張子（`tex, sty, cls, aux, log, toc, bbl`）は不可。 |
+| `auto-appendix` | `true`/`false` | 末尾出力の直前に `\clearpage\appendix` を自動実行するか（既定: `true`）。                                    |
 
-初期状態では`\FinalProcess`は`\AppendixAfter`,`\BibsAfter`,`\InputAllFinalSections`の順に読み込んでいます。
+安全のため `file` の拡張子に `.tex` 等は指定できません。デフォルトの `.apx` を推奨します。
 
-##### InputAllFinalSections
+## docmute との併用構成例
 
-`\InputAllFinalSections`の中身は`\jobname.fsl`を読み込むようになっています。
-*finalsection*環境を使うたびに`\jobname\theAppendixAfter@finalsection.fsc`を作成し、それを input する、という内容が`\jobname.fsl`には記載されています。
+メイン／サブで異なるパスを安全に扱う例です。
 
-##### AppendixAfter
+```tex main.tex
+\documentclass{ltjsreport}
+\usepackage[mode=main]{AppendixAfter}
+\addbibresource{sections/01_intro/reference.bib}
+\begin{document}
+\input{title.tex}
+\input{sections/00_abst/main.tex}
+\clearpage
+\input{sections/01_intro/main.tex}
 
-初期状態では`\AppendixAfter`の中身は`\clearpage`->`appendix`->`\InputIfFileExists{\jobname.afn}{}{}`となっています(IO があるため、余りいじることはお勧めしません)
+\begin{AfterAppendix}
+  \input{acknowledgement.tex}
+  \printbibliography[title={参考文献}]
+\end{AfterAppendix}
 
-##### BibsAfter
+\end{document}
+```
 
-初期状態では`\BibsAfter`の中身は空となっています。そのため、このマクロを `\renewcommand` することで、Appendix の後に参考文献などを入れることが出来ます。
+```tex
+\documentclass{ltjsreport}
+\usepackage{AppendixAfter}
+\addbibresource{reference.bib}
+\begin{document}
+\chapter{序論}
+イントロ
 
-## 新規 IO について
+引用\cite{Lang_2010}
 
-`.afn`(Appendix File Name), `.fsl`(Final Section List), `.fsc`(Final Section Content) ファイルを利用します。
-latexmk を使用する場合は
+画像：図\ref{fig:01_image}
+\begin{figure}[ht]
+  \centering
+  \includegraphics[keepaspectratio, scale=1.0]
+  {assets/01_image.png}
+  \caption{キャプション}
+  \label{fig:01_image}
+\end{figure}
 
-```perl
-push @generated_exts, 'afn', 'fsl', 'fsc';
-add_cus_dep('afn', 'tex', 0, 'dummy_rescan');
-add_cus_dep('fsl', 'tex', 0, 'dummy_rescan');
-add_cus_dep('fsc', 'tex', 0, 'dummy_rescan');
+表：表\ref{table:01_table}
+\begin{table}[ht]
+  \centering
+  \begin{tabular}{|c|c|c|} \hline
+    A & B & C \\ \hline
+    A & B & C \\ \hline
+    A & B & C \\ \hline
+    A & B & C \\ \hline
+    A & B & C \\ \hline
+    A & B & C \\ \hline
+    A & B & C \\ \hline
+    A & B & C \\ \hline
+  \end{tabular}
+  \caption{長いキャプション長いキャプション長いキャプション長いキャプション長いキャプション長いキャプション長いキャプション長いキャプション長いキャプション長いキャプション}
+  \label{table:01_table}
+\end{table}
+% \AppendixInput[サブファイルから見た相対パス]{メインファイルから見た相対パス}
+\AppendixInput[appendix.tex]{./sections/01_intro/appendix.tex}
+\end{document}
+```
+
+## コマンド・環境リファレンス
+
+### ファイル読み込みの予約
+
+#### `\AppendixInput[<sub_path>]{<main_path>}`
+
+末尾（Appendix）で `\input{...}` する予約を記録します。
+
+- `mode=main`: `<main_path>` を採用
+- `mode=sub`: `<sub_path>` を採用（省略時は `<main_path>` を流用）
+
+存在しないファイルを指定した場合、警告を出します。
+
+### 末尾へまとめてコードを送りたい
+
+#### `\begin{AfterAppendix} ... \end{AfterAppendix}`
+
+制御綴（`\input` や `\printbibliography` など）を含むコードを、Appendix 後へそのまま送るための環境です。環境内に書いた順序で出力されます。
+
+例:
+
+```tex
+\begin{AfterAppendix}
+  \input{acknowledgement.tex}
+  \printbibliography[title={参考文献}]
+\end{AfterAppendix}
+```
+
+### テキスト塊の予約（Verbatim ライク）
+
+#### `\begin{Stock} ... \end{Stock}`
+
+環境内の内容をそのままストリームへ書き出します。記述順で末尾に挿入されます。特殊文字を含むテキストやコード片の転送に適しますが、制御綴を含める用途には `AfterAppendix` を使う方が安全です。
+
+### 1 行だけコマンドを送りたい
+
+#### `\AppendixLine{<code>}`
+
+任意の 1 行をそのまま予約します。
+
+```tex
+\AppendixLine{\clearpage}
+```
+
+### 手動で末尾出力を発行したい
+
+#### `\OutputAppendix`
+
+通常は `\end{document}` で自動出力されますが、任意位置で末尾出力を確定したい場合に使います。1 度出力されると、以降の自動出力はスキップされます。
+
+### 自動 Appendix の発行
+
+`auto-appendix=true`（既定）では、末尾出力直前に `\clearpage\appendix` を自動で発行します。不要な場合は `auto-appendix=false` にしてください。
+
+## 動作の要点（展開と記録）
+
+- ストリームへの書き込みは「必要最小限のみ展開」します。ファイル名は適切に展開して `.apx` へ `\input{...}` の形で記録されます。
+- `AfterAppendix` や `AppendixLine` は、書いたとおりのコードを `.apx` に記録します（後段の末尾入力時に解釈されます）。
+- 記録の順序どおりに、末尾で上から順に実行されます。
+
+## latexmk の設定（推奨）
+
+`.apx` の変更検知と再スキャンのため、`.latexmkrc` に以下を追加することを推奨します。
+
+```perl .latexmkrc
+push @generated_exts, 'apx';
+add_cus_dep('apx', 'tex', 0, 'dummy_rescan');
 sub dummy_rescan {
     return 0;
 }
 ```
 
-と追記した方が良いかと思います。
+## 互換性・非推奨
+
+- `\maintex` コマンドは非推奨になりました。パッケージオプションでの指定を使用してください。
+- `\inputappendix` コマンドは `\AppendixInput` に名称変更されました。
+- `finalsection` 環境は `Stock` / `AfterAppendix` 環境へ名称変更されました。
+- 旧フック（`\FinalProcess`, `\BibsAfter` など）は廃止しました。必要に応じて `\AppendixLine` や `AfterAppendix` を使用してください。

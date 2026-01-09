@@ -1,6 +1,6 @@
 \documentclass[a4paper,12pt]{ltjsreport}
 \usepackage{pre}
-\maintex
+\usepackage[mode=main]{AppendixAfter}
 \addbibresource{sections/01_intro/reference.bib}
 \begin{document}
 \input{title.tex}
@@ -24,9 +24,9 @@
 \clearpage
 \input{sections/01_intro/main.tex}
 
-% 謝辞
-\begin{finalsection}
+\begin{AfterAppendix}
   \input{acknowledgement.tex}
-\end{finalsection}
+  \printbibliography[title={参考文献}]
+\end{AfterAppendix}
 
 \end{document}

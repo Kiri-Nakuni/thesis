@@ -1,75 +1,146 @@
-\NeedsTeXFormat{LaTeX2e}
-\ProvidesPackage{AppendixAfter}[2025/07/27 v1.0.0 Nakuni Kiri]
-\DeclareOption*{\PackageWarning{AppendixAfter}{Unknown option '\CurrentOption'}}
-\ProcessOptions\relax
-\RequirePackage{etoolbox}
-\RequirePackage{environ}
-\newif\ifAppendixAfter@main
-\AppendixAfter@mainfalse
-\newcommand{\maintex}{\AppendixAfter@maintrue}
-\newcounter{AppendixAfter@finalsection}
-\newwrite\AppendixAfter@appendixfile
-\newwrite\AppendixAfter@finalsectionfile
-\newwrite\AppendixAfter@finalsectionlist
-\AtBeginDocument{%
-    \immediate\openout\AppendixAfter@appendixfile=\jobname.afn%
-    \immediate\openout\AppendixAfter@finalsectionlist=\jobname.fsl%
-    \@ifclassloaded{jlreq}{%
-        \PackageWarningNoLine{AppendixAfter}{%
-            jlreq document class detected.\MessageBreak
-            Note: AtEndDocument processing may require manual \string\FinalProcess\space call.\MessageBreak
-            If appendices or final sections are not appearing,\MessageBreak
-            please add \string\FinalProcess\space before \string\end{document}%
-        }%
-    }{}%
+% Modern LaTeX kernel required
+\NeedsTeXFormat{LaTeX2e}[2023/06/01]
+\ProvidesExplPackage
+{AppendixAfter}
+{2026/01/10}
+{2.1.5}
+{Stream-based content delaying with docmute/BibLaTeX support}
+\bool_new:N \g__apa_active_bool
+\bool_new:N \g__apa_sub_mode_bool
+\bool_new:N \g__apa_auto_appendix_bool
+\bool_new:N \g__apa_already_output_bool
+\bool_new:N \g__apa_stream_is_open_bool
+\tl_new:N   \g__apa_filename_tl
+\iow_new:N  \g__apa_write_stream
+\seq_new:N  \g__apa_unsafe_ext_seq
+\seq_gset_from_clist:Nn \g__apa_unsafe_ext_seq { tex, sty, cls, aux, log, toc, bbl }
+\tl_new:N   \l__apa_ext_tl
+\keys_define:nn { AppendixAfter }
+{
+    mode .choice:,
+    mode / main .code:n = {
+            \bool_gset_true:N  \g__apa_active_bool
+            \bool_gset_false:N \g__apa_sub_mode_bool
+        },
+    mode / sub  .code:n = {
+            \bool_gset_true:N \g__apa_active_bool
+            \bool_gset_true:N \g__apa_sub_mode_bool
+        },
+    mode / off  .code:n = {
+            \bool_gset_false:N \g__apa_active_bool
+            \bool_gset_false:N \g__apa_sub_mode_bool
+        },
+    mode .initial:n = sub,
+
+    file .tl_set:N   = \g__apa_filename_tl,
+    file .initial:n  = { \c_sys_jobname_str.apx },
+
+    auto-appendix .bool_set:N = \g__apa_auto_appendix_bool,
+    auto-appendix .default:n  = true,
+    auto-appendix .initial:n  = true,
+
+    unknown .code:n  = { \msg_error:nnn { AppendixAfter } { unknown-option } { \l_keys_key_tl } }
 }
-\AtEndDocument{%
-    \closeout\AppendixAfter@appendixfile%
-    \closeout\AppendixAfter@finalsectionlist%
+
+\ProcessKeyOptions
+\msg_new:nnn { AppendixAfter } { unknown-option } { Unknown~option~'#1'. }
+\msg_new:nnn { AppendixAfter } { write-disabled } { Appendix~recording~is~disabled.~(mode=off) }
+\msg_new:nnn { AppendixAfter } { unsafe-extension } { File~extension~'#1'~is~not~allowed~for~safety~reasons. }
+\msg_new:nnn { AppendixAfter } { file-not-found } { AppendixInput:~File~'#1'~not~found.~(Mode:~#2) }
+\cs_new_protected:Nn \__apa_check_filename:
+{
+    \seq_set_split:NnV \l_tmpa_seq { . } \g__apa_filename_tl
+    \seq_get_right:NN \l_tmpa_seq \l_tmpa_tl
+    \tl_set:Nx \l__apa_ext_tl { \str_lowercase:n { \l_tmpa_tl } }
+    \seq_if_in:NVT \g__apa_unsafe_ext_seq \l__apa_ext_tl
+    { \msg_error:nnx { AppendixAfter } { unsafe-extension } { \l__apa_ext_tl } }
 }
-\newcommand{\inputappendix}[2][\@empty]{%
-    \ifAppendixAfter@main
-        \protected@write\AppendixAfter@appendixfile{}{%
-            \string\input{#2}
-        }%
-    \else
-        \ifx\@empty#1\@empty
-            \protected@write\AppendixAfter@appendixfile{}{%
-                \string\input{#2}
-            }%
-        \else
-            \protected@write\AppendixAfter@appendixfile{}{%
-                \string\input{#1}
-            }%
-        \fi
-    \fi
+
+\cs_new_protected:Nn \__apa_open_stream:
+{
+    \bool_if:NF \g__apa_stream_is_open_bool
+    {
+        \__apa_check_filename:
+        \iow_open:Nn \g__apa_write_stream { \g__apa_filename_tl }
+        \iow_now:Nn \g__apa_write_stream { \par }
+        \bool_gset_true:N \g__apa_stream_is_open_bool
+    }
 }
-\newcommand{\AppendixAfter}{%
-    \clearpage
-    \appendix
-    \InputIfFileExists{\jobname.afn}{}{}%
+
+\cs_new_protected:Nn \__apa_close_stream:
+{
+    \bool_if:NT \g__apa_stream_is_open_bool
+    {
+        \iow_close:N \g__apa_write_stream
+        \bool_gset_false:N \g__apa_stream_is_open_bool
+    }
 }
-\newcommand{\BibsAfter}{%
+
+\cs_new_protected:Nn \__apa_output_content:
+{
+    \bool_lazy_and:nnT { \g__apa_active_bool } { !\g__apa_already_output_bool }
+    {
+        \__apa_close_stream:
+        \exp_args:NV \file_if_exist:nT \g__apa_filename_tl
+        {
+            \bool_if:NT \g__apa_auto_appendix_bool { \clearpage \appendix }
+            \input{\tl_use:N \g__apa_filename_tl}
+        }
+        \bool_gset_true:N \g__apa_already_output_bool
+    }
 }
-\newcommand{\InputAllFinalSections}{%
-    \InputIfFileExists{\jobname.fsl}{}{%
-        \PackageWarning{AppendixAfter}{No final sections list file found}%
-    }%
+\AddToHook{begindocument} { \bool_if:NT \g__apa_active_bool { \__apa_open_stream: } }
+\AddToHook{enddocument}    { \__apa_output_content: }
+\NewDocumentCommand \AppendixInput { o m }
+{
+    \bool_if:NT \g__apa_active_bool
+    {
+        \bool_if:NTF \g__apa_sub_mode_bool
+        {
+            \IfNoValueTF{#1}
+            { \tl_set:Nn \l_tmpa_tl { #2 } }
+            { \tl_set:Nn \l_tmpa_tl { #1 } }
+            \tl_set:Nn \l_tmpb_tl { sub }
+        }
+        {
+            \tl_set:Nn \l_tmpa_tl { #2 }
+            \tl_set:Nn \l_tmpb_tl { main }
+        }
+
+        \file_if_exist:VTF \l_tmpa_tl
+        { }
+        { \msg_warning:nnxx { AppendixAfter } { file-not-found } { \l_tmpa_tl } { \l_tmpb_tl } }
+        \iow_now:Nx \g__apa_write_stream { \string\input{\tl_use:N \l_tmpa_tl} }
+    }
 }
-\newcommand{\FinalProcess}{%
-    \AppendixAfter
-    \BibsAfter
-    \InputAllFinalSections
+\NewDocumentEnvironment { Stock } { +v }
+{ }
+{
+    \bool_if:NTF \g__apa_active_bool
+    { \iow_now:Nn \g__apa_write_stream { #1 } \iow_now:Nn \g__apa_write_stream { \par } }
+    { \msg_warning:nn { AppendixAfter } { write-disabled } }
 }
-\NewEnviron{finalsection}{%
-    \stepcounter{AppendixAfter@finalsection}%
-    \immediate\openout\AppendixAfter@finalsectionfile=\jobname\theAppendixAfter@finalsection.fsc%
-    \immediate\write\AppendixAfter@finalsectionfile{\unexpanded\expandafter{\BODY}}%
-    \immediate\closeout\AppendixAfter@finalsectionfile%
-    \immediate\write\AppendixAfter@finalsectionlist{%
-        \string\InputIfFileExists{\jobname\theAppendixAfter@finalsection.fsc}{}{}%
-    }%
+\NewDocumentCommand \AppendixLine { m }
+{ \bool_if:NT \g__apa_active_bool { \iow_now:Nn \g__apa_write_stream { #1 } } }
+
+\NewDocumentCommand \OutputAppendix { } { \__apa_output_content: }
+\NewDocumentEnvironment { AfterAppendix } { +b }
+{ }
+{
+    \bool_if:NT \g__apa_active_bool
+    {
+        \iow_now:Nn \g__apa_write_stream { #1 }
+        \iow_now:Nn \g__apa_write_stream { \par }
+    }
 }
-\AtEndDocument{%
-    \FinalProcess
+\NewDocumentEnvironment { finalsection } { +v }
+{ \PackageWarning{AppendixAfter}{Environment 'finalsection' is deprecated. Use 'Stock' instead.} }
+{ \bool_if:NT \g__apa_active_bool { \iow_now:Nn \g__apa_write_stream { #1 } \iow_now:Nn \g__apa_write_stream { \par } } }
+
+\NewDocumentCommand \maintex { }
+{
+    \PackageWarning{AppendixAfter}{Command \string\maintex\space is deprecated. Use [mode=main] option.}
+    \bool_gset_true:N \g__apa_active_bool
+    \bool_gset_false:N \g__apa_sub_mode_bool
+    \__apa_open_stream:
 }
