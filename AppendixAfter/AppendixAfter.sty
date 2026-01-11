@@ -5,16 +5,30 @@
 {2026/01/10}
 {2.1.5}
 {Stream-based content delaying with docmute/BibLaTeX support}
+
+% Boolean flags for package state
 \bool_new:N \g__apa_active_bool
 \bool_new:N \g__apa_sub_mode_bool
 \bool_new:N \g__apa_auto_appendix_bool
 \bool_new:N \g__apa_already_output_bool
 \bool_new:N \g__apa_stream_is_open_bool
+
+% Global variables
 \tl_new:N   \g__apa_filename_tl
 \iow_new:N  \g__apa_write_stream
+
+% Safety: forbidden file extensions
 \seq_new:N  \g__apa_unsafe_ext_seq
 \seq_gset_from_clist:Nn \g__apa_unsafe_ext_seq { tex, sty, cls, aux, log, toc, bbl }
+
+% Local variables for internal use
 \tl_new:N   \l__apa_ext_tl
+\tl_new:N   \l__apa_input_path_tl
+\tl_new:N   \l__apa_mode_desc_tl
+\seq_new:N  \l__apa_filename_seq
+\tl_new:N   \l__apa_temp_ext_tl
+
+% Package options
 \keys_define:nn { AppendixAfter }
 {
     mode .choice:,
@@ -43,19 +57,23 @@
 }
 
 \ProcessKeyOptions
+% Error and warning messages
 \msg_new:nnn { AppendixAfter } { unknown-option } { Unknown~option~'#1'. }
 \msg_new:nnn { AppendixAfter } { write-disabled } { Appendix~recording~is~disabled.~(mode=off) }
 \msg_new:nnn { AppendixAfter } { unsafe-extension } { File~extension~'#1'~is~not~allowed~for~safety~reasons. }
 \msg_new:nnn { AppendixAfter } { file-not-found } { AppendixInput:~File~'#1'~not~found.~(Mode:~#2) }
+
+% Internal: Check filename for forbidden extensions
 \cs_new_protected:Nn \__apa_check_filename:
 {
-    \seq_set_split:NnV \l_tmpa_seq { . } \g__apa_filename_tl
-    \seq_get_right:NN \l_tmpa_seq \l_tmpa_tl
-    \tl_set:Nx \l__apa_ext_tl { \str_lowercase:n { \l_tmpa_tl } }
+    \seq_set_split:NnV \l__apa_filename_seq { . } \g__apa_filename_tl
+    \seq_get_right:NN \l__apa_filename_seq \l__apa_temp_ext_tl
+    \tl_set:Nx \l__apa_ext_tl { \str_lowercase:n { \l__apa_temp_ext_tl } }
     \seq_if_in:NVT \g__apa_unsafe_ext_seq \l__apa_ext_tl
     { \msg_error:nnx { AppendixAfter } { unsafe-extension } { \l__apa_ext_tl } }
 }
 
+% Internal: Open output stream
 \cs_new_protected:Nn \__apa_open_stream:
 {
     \bool_if:NF \g__apa_stream_is_open_bool
@@ -67,6 +85,7 @@
     }
 }
 
+% Internal: Close output stream
 \cs_new_protected:Nn \__apa_close_stream:
 {
     \bool_if:NT \g__apa_stream_is_open_bool
@@ -76,6 +95,7 @@
     }
 }
 
+% Internal: Output accumulated content at document end
 \cs_new_protected:Nn \__apa_output_content:
 {
     \bool_lazy_and:nnT { \g__apa_active_bool } { !\g__apa_already_output_bool }
@@ -89,8 +109,12 @@
         \bool_gset_true:N \g__apa_already_output_bool
     }
 }
+
+% Hooks: Initialize and finalize
 \AddToHook{begindocument} { \bool_if:NT \g__apa_active_bool { \__apa_open_stream: } }
 \AddToHook{enddocument}    { \__apa_output_content: }
+
+% User command: Record file input for appendix
 \NewDocumentCommand \AppendixInput { o m }
 {
     \bool_if:NT \g__apa_active_bool
@@ -98,21 +122,23 @@
         \bool_if:NTF \g__apa_sub_mode_bool
         {
             \IfNoValueTF{#1}
-            { \tl_set:Nn \l_tmpa_tl { #2 } }
-            { \tl_set:Nn \l_tmpa_tl { #1 } }
-            \tl_set:Nn \l_tmpb_tl { sub }
+            { \tl_set:Nn \l__apa_input_path_tl { #2 } }
+            { \tl_set:Nn \l__apa_input_path_tl { #1 } }
+            \tl_set:Nn \l__apa_mode_desc_tl { sub }
         }
         {
-            \tl_set:Nn \l_tmpa_tl { #2 }
-            \tl_set:Nn \l_tmpb_tl { main }
+            \tl_set:Nn \l__apa_input_path_tl { #2 }
+            \tl_set:Nn \l__apa_mode_desc_tl { main }
         }
 
-        \file_if_exist:VTF \l_tmpa_tl
+        \file_if_exist:VTF \l__apa_input_path_tl
         { }
-        { \msg_warning:nnxx { AppendixAfter } { file-not-found } { \l_tmpa_tl } { \l_tmpb_tl } }
-        \iow_now:Nx \g__apa_write_stream { \string\input{\tl_use:N \l_tmpa_tl} }
+        { \msg_warning:nnxx { AppendixAfter } { file-not-found } { \l__apa_input_path_tl } { \l__apa_mode_desc_tl } }
+        \iow_now:Nx \g__apa_write_stream { \string\input{\tl_use:N \l__apa_input_path_tl} }
     }
 }
+
+% User environment: Verbatim-style content capture (for compatibility)
 \NewDocumentEnvironment { Stock } { +v }
 { }
 {
@@ -120,10 +146,15 @@
     { \iow_now:Nn \g__apa_write_stream { #1 } \iow_now:Nn \g__apa_write_stream { \par } }
     { \msg_warning:nn { AppendixAfter } { write-disabled } }
 }
+
+% User command: Write a single line to appendix
 \NewDocumentCommand \AppendixLine { m }
 { \bool_if:NT \g__apa_active_bool { \iow_now:Nn \g__apa_write_stream { #1 } } }
 
+% User command: Manually trigger appendix output
 \NewDocumentCommand \OutputAppendix { } { \__apa_output_content: }
+
+% User environment: Record code block for appendix (supports control sequences)
 \NewDocumentEnvironment { AfterAppendix } { +b }
 { }
 {
@@ -133,10 +164,13 @@
         \iow_now:Nn \g__apa_write_stream { \par }
     }
 }
+
+% Deprecated environment: Use AfterAppendix instead
 \NewDocumentEnvironment { finalsection } { +v }
-{ \PackageWarning{AppendixAfter}{Environment 'finalsection' is deprecated. Use 'Stock' instead.} }
+{ \PackageWarning{AppendixAfter}{Environment 'finalsection' is deprecated. Use 'AfterAppendix' instead.} }
 { \bool_if:NT \g__apa_active_bool { \iow_now:Nn \g__apa_write_stream { #1 } \iow_now:Nn \g__apa_write_stream { \par } } }
 
+% Deprecated command: Use [mode=main] option instead
 \NewDocumentCommand \maintex { }
 {
     \PackageWarning{AppendixAfter}{Command \string\maintex\space is deprecated. Use [mode=main] option.}
