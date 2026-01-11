@@ -27,6 +27,7 @@
 \tl_new:N   \l__apa_mode_desc_tl
 \seq_new:N  \l__apa_filename_seq
 \tl_new:N   \l__apa_temp_ext_tl
+
 % Package options
 \keys_define:nn { AppendixAfter }
 {
@@ -108,6 +109,7 @@
         \bool_gset_true:N \g__apa_already_output_bool
     }
 }
+
 % Hooks: Initialize and finalize
 \AddToHook{begindocument} { \bool_if:NT \g__apa_active_bool { \__apa_open_stream: } }
 \AddToHook{enddocument}    { \__apa_output_content: }
