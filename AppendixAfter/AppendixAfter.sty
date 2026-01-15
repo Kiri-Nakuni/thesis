@@ -133,6 +133,25 @@
         \iow_now:Nn \g__apa_write_stream { \par }
     }
 }
+
+\NewDocumentEnvironment { OnlySubAppendix } { +b }
+{ }
+{
+    \bool_if:nT { \g__apa_active_bool && \g__apa_sub_mode_bool}
+    {
+        \iow_now:Nn \g__apa_write_stream { #1 }
+        \iow_now:Nn \g__apa_write_stream { \par }
+    }
+}
+\NewDocumentEnvironment { OnlyMainAppendix } { +b }
+{ }
+{
+    \bool_if:nT { \g__apa_active_bool && ! \g__apa_sub_mode_bool}
+    {
+        \iow_now:Nn \g__apa_write_stream { #1 }
+        \iow_now:Nn \g__apa_write_stream { \par }
+    }
+}
 \NewDocumentEnvironment { finalsection } { +v }
 { \PackageWarning{AppendixAfter}{Environment 'finalsection' is deprecated. Use 'Stock' instead.} }
 { \bool_if:NT \g__apa_active_bool { \iow_now:Nn \g__apa_write_stream { #1 } \iow_now:Nn \g__apa_write_stream { \par } } }

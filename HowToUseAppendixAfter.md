@@ -99,19 +99,22 @@ AppendixAfter.sty を TeX が認識できるパスへ配置し、必要に応じ
 \end{table}
 % \AppendixInput[サブファイルから見た相対パス]{メインファイルから見た相対パス}
 \AppendixInput[appendix.tex]{./sections/01_intro/appendix.tex}
+\begin{OnlySubAppendix}
+  \printbibliography[title={参考文献}]
+\end{OnlySubAppendix}
 \end{document}
 ```
 
 ## コマンド・環境リファレンス
 
-### ファイル読み込みの予約
+### ファイル読み込み
 
 #### `\AppendixInput[<sub_path>]{<main_path>}`
 
-末尾（Appendix）で `\input{...}` する予約を記録します。
+末尾（Appendix）で `\input{...}` するファイルを記録します。
 
-- `mode=main`: `<main_path>` を採用
-- `mode=sub`: `<sub_path>` を採用（省略時は `<main_path>` を流用）
+- `mode=main`: `<main_path>` から読み込みます
+- `mode=sub`: `<sub_path>` から読み込みます（省略時は `<main_path>` を流用）
 
 存在しないファイルを指定した場合、警告を出します。
 
@@ -134,7 +137,14 @@ AppendixAfter.sty を TeX が認識できるパスへ配置し、必要に応じ
 
 #### `\begin{Stock} ... \end{Stock}`
 
-環境内の内容をそのままストリームへ書き出します。記述順で末尾に挿入されます。特殊文字を含むテキストやコード片の転送に適しますが、制御綴を含める用途には `AfterAppendix` を使う方が安全です。
+環境内の内容をそのまま `.apx` へ書き出します。記述順で末尾に挿入されます。特殊文字を含むテキストやコード片の転送に適しますが、制御綴を含める用途には `AfterAppendix` を使う方が安全です。
+
+#### `\begin{OnlySubAppendix} ... \end{OnlySubAppendix}`
+
+環境内の内容を、`mode=sub` の場合にのみ `.apx` ファイルに追記します。
+参考文献をサブファイルでも表示したい場合などに用いてください。
+
+また、~~使い道は思いつきませんが~~ `mode=main` の場合にのみ `.apx` ファイルに追記する、`OnlyMainAppendix` 環境もあります。
 
 ### 1 行だけコマンドを送りたい
 
@@ -156,10 +166,8 @@ AppendixAfter.sty を TeX が認識できるパスへ配置し、必要に応じ
 
 `auto-appendix=true`（既定）では、末尾出力直前に `\clearpage\appendix` を自動で発行します。不要な場合は `auto-appendix=false` にしてください。
 
-## 動作の要点（展開と記録）
+## 動作の要点
 
-- ストリームへの書き込みは「必要最小限のみ展開」します。ファイル名は適切に展開して `.apx` へ `\input{...}` の形で記録されます。
-- `AfterAppendix` や `AppendixLine` は、書いたとおりのコードを `.apx` に記録します（後段の末尾入力時に解釈されます）。
 - 記録の順序どおりに、末尾で上から順に実行されます。
 
 ## latexmk の設定（推奨）
@@ -168,10 +176,6 @@ AppendixAfter.sty を TeX が認識できるパスへ配置し、必要に応じ
 
 ```perl .latexmkrc
 push @generated_exts, 'apx';
-add_cus_dep('apx', 'tex', 0, 'dummy_rescan');
-sub dummy_rescan {
-    return 0;
-}
 ```
 
 ## 互換性・非推奨
