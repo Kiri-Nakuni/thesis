@@ -1,9 +1,8 @@
-% Modern LaTeX kernel required
 \NeedsTeXFormat{LaTeX2e}[2023/06/01]
 \ProvidesExplPackage
 {AppendixAfter}
-{2026/01/10}
-{2.1.5}
+{2026/01/15}
+{2.1.7}
 {Stream-based content delaying with docmute/BibLaTeX support}
 \bool_new:N \g__apa_active_bool
 \bool_new:N \g__apa_sub_mode_bool
@@ -111,6 +110,28 @@
         { }
         { \msg_warning:nnxx { AppendixAfter } { file-not-found } { \l_tmpa_tl } { \l_tmpb_tl } }
         \iow_now:Nx \g__apa_write_stream { \string\input{\tl_use:N \l_tmpa_tl} }
+    }
+}
+\NewDocumentCommand \inputdualpath { o m }
+{
+    \bool_if:NT \g__apa_active_bool
+    {
+        \bool_if:NTF \g__apa_sub_mode_bool
+        {
+            \IfNoValueTF{#1}
+            { \tl_set:Nn \l_tmpa_tl { #2 } }
+            { \tl_set:Nn \l_tmpa_tl { #1 } }
+            \tl_set:Nn \l_tmpb_tl { sub }
+        }
+        {
+            \tl_set:Nn \l_tmpa_tl { #2 }
+            \tl_set:Nn \l_tmpb_tl { main }
+        }
+
+        \file_if_exist:VTF \l_tmpa_tl
+        { }
+        { \msg_warning:nnxx { AppendixAfter } { file-not-found } { \l_tmpa_tl } { \l_tmpb_tl } }
+        \file_input:V { \l_tmpa_tl }
     }
 }
 \NewDocumentEnvironment { Stock } { +v }

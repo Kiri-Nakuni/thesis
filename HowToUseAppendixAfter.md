@@ -109,6 +109,13 @@ AppendixAfter.sty を TeX が認識できるパスへ配置し、必要に応じ
 
 ### ファイル読み込み
 
+#### `\inputdualpath[<sub_path>]{<main_path>}`
+
+その場で `\input{...}` するファイルを記述します。
+
+- `mode=main`: `<main_path>` から読み込みます
+- `mode=sub`: `<sub_path>` から読み込みます（省略時は `<main_path>` を流用）
+
 #### `\AppendixInput[<sub_path>]{<main_path>}`
 
 末尾（Appendix）で `\input{...}` するファイルを記録します。
